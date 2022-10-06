@@ -1,4 +1,3 @@
-import produce from 'immer';
 import _ from 'lodash';
 import { Path, Formula, FormulaTypes, PathWays } from './Formula';
 
