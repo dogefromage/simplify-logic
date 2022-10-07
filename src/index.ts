@@ -14,8 +14,10 @@ const transformations: Transformation[] =
     implication('F v 1', '1'),
 
     // 6
-    implication('A ^ A', 'A'),
-    implication('A v A', 'A'),
+    ...equivalency('A ^ A', 'A'),
+    ...equivalency('A v A', 'A'),
+    // implication('A ^ A', 'A'),
+    // implication('A v A', 'A'),
 
     // 8
     implication('A ^ B', 'B ^ A'),
@@ -57,6 +59,6 @@ console.log(formulaToString(F));
 // const equivalencies = generateEquivalents(F, transformations);
 // equivalencies.forEach(e => console.log('=== ' + formulaToString(e)));
 
-branchOut(F, 7, transformations);
+branchOut(F, 6, transformations);
 
 

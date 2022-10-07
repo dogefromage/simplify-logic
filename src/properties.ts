@@ -158,3 +158,27 @@ export function isFormulaAtomic(F: Formula)
 
     return true;
 }
+
+export function getFormulaComplexity(F: Formula): number
+{
+    if (F.type === FormulaTypes.Atomic ||
+        F.type === FormulaTypes.Constant)
+    {
+        return 1;
+    }
+
+    if (F.type === FormulaTypes.Unary)
+    {
+        return 1 + getFormulaComplexity(F.inner);
+    }
+        
+    if (F.type === FormulaTypes.Binary)
+    {
+        const lhs = getFormulaComplexity(F.lhs);
+        const rhs = getFormulaComplexity(F.rhs);
+
+        return 1 + lhs + rhs;
+    }
+
+    return 0;
+}

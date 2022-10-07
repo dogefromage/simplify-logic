@@ -1,49 +1,76 @@
 import { Formula, Transformation } from "./Formula";
 import { generateEquivalents } from "./generateEquivalents";
 import { formulaToString, printSequence } from "./stringMagic";
-import { isFormulaAtomic } from "./properties";
+import { getFormulaComplexity, isFormulaAtomic } from "./properties";
+import fs from 'fs';
 
-function hash(F: Formula)
+function hashFormula(F: Formula)
 {
     return formulaToString(F);
 }
 
-// const checked = new Set<string>();
+const visitedNodes = new Map<string, number>();
 
-let formulasFound = 0;
+let formulasFound = 0,
+    duplicationsPruned = 0,
+    complexSkipped = 0;
 
-// let allFormulas: string[] = [];
+let debugLines: string[] = [];
 
-export function branchOut(F: Formula, remainingDepth: number, transformations: Transformation[])
+function logInfo()
 {
-    formulasFound = 0;
-    // checked.clear();
-    // allFormulas = [];
-
-    branchOutRecurse(F, remainingDepth, transformations, []);
-
-    console.log(`Total found: ${formulasFound}`);
-
-    // const sorted = allFormulas.sort((a, b) => a.length - b.length);
-    // const writeStream = fs.createWriteStream('out.txt');
-    // for (const line of sorted)
-    //     writeStream.write(line + '\n');
-    // writeStream.end();
+    console.log(`Found ${formulasFound}, dupes pruned ${duplicationsPruned}, too large skipped ${complexSkipped}`);
 }
 
-function branchOutRecurse(F: Formula, remainingDepth: number, transformations: Transformation[], sequence: Formula[])
+export function branchOut(F: Formula, maxDepth: number, transformations: Transformation[])
 {
-    const isAtomic = isFormulaAtomic(F);
-    if (isAtomic) printSequence([ ...sequence, F ]);
+    formulasFound = duplicationsPruned = complexSkipped = 0;
+    visitedNodes.clear();
 
+    debugLines.push(`initial: ${hashFormula(F)}`);
+
+    branchOutRecurse(F, 1, maxDepth, transformations, []);
+
+    logInfo();
+
+    const writeStream = fs.createWriteStream('out.txt');
+    for (const line of debugLines)
+        writeStream.write(line + '\n');
+    writeStream.end();
+}
+
+function branchOutRecurse(F: Formula, currentDepth: number, maxDepth: number, 
+    transformations: Transformation[], sequence: Formula[])
+{
     formulasFound++;
     
     if (formulasFound % 100000 === 0)
-        console.log(`${formulasFound} formulas found...`)
+        logInfo();
 
-    // allFormulas.push(formulaToString(F));
+    const isAtomic = isFormulaAtomic(F);
+    if (isAtomic) printSequence([ ...sequence, F ]);
 
-    if (remainingDepth <= 1)
+    const hashF = hashFormula(F);
+
+    const lastVisited = visitedNodes.get(hashF);
+    if (lastVisited != null && lastVisited < currentDepth)
+    {
+        // debugLines.push(`pruned: ${hashF}, lastDepth: ${lastVisited.nodeDepth}, currentDepth: ${currentDepth}`)
+        duplicationsPruned++;
+        return;
+    }
+    
+    // debugLines.push(`set: ${hashF}, lastDepth: ${lastVisited}, currentDepth: ${currentDepth}`)
+    visitedNodes.set(hashF, currentDepth);
+
+    const complexity = getFormulaComplexity(F);
+    if (complexity > 25)
+    {
+        complexSkipped++;
+        return;
+    }
+
+    if (currentDepth >= maxDepth)
     {
         return;
     }
@@ -53,15 +80,7 @@ function branchOutRecurse(F: Formula, remainingDepth: number, transformations: T
 
         for (const equivalent of equivalents)
         {
-            // if (checked.has(hash(equivalent)))
-            // {
-            //     skipped++;
-            //     continue;
-            // }
-
-            branchOutRecurse(equivalent, remainingDepth - 1, transformations, [ ...sequence, F ]);
-
-            // checked.add(hash(equivalent));
+            branchOutRecurse(equivalent, currentDepth + 1, maxDepth, transformations, [ ...sequence, F ]);
         }
     }
 }
