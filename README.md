@@ -1,6 +1,6 @@
 # simplify-logic
 
-This program simplifies an arbitrary formula written in logic symbols (¬ negation, v or, ^ and, \[A-X\] any character) until the result contains only one of each input character.
+This program simplifies an arbitrary formula written in logic symbols (¬ negation, v or, ^ and, \[A-z\] any character) until the result contains only one of each input character.
 
 ```ts
 
